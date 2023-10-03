@@ -16,7 +16,7 @@ app.use('/api/contacts', contactsRouter)
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Not found' })
-  console.log("tu jest blad");
+  console.log("The mistake is in route");
 })
 
 app.use((err, req, res, next) => {

@@ -1,91 +1,67 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
 const {
   listContacts,
   getContactById,
+   addContact,
   removeContact,
-  addContact,
   updateContact,
 } = require("../../models/contacts");
 
-const Joi = require("joi");
+const { contactValidator } = require("../../utils/validator");
 
-const contactSchema = Joi.object({
-  name: Joi.string().min(3).required(),
-  email: Joi.string().email().required(),
-  phone: Joi.string()
-    .min(10)
-    .required(),
+router.get("/", async (req, res, next) => {
+  try {
+    res.status(200).json(await listContacts());
+  } catch (error) {
+    next(error)
+  }
 });
 
-
-
-router.get('/', async (req, res, next) => {
+router.get("/:contactId", async (req, res, next) => {
   try {
-    const contacts = await listContacts();
-    res.status(200).json(contacts);
-  } catch(error) {
-    next(error)
-  }
-})
-
-router.get('/:id', async (req, res, next) => {
-  // const {id} = req.params;
-  try {
-    const contacts = await getContactById(req.params.id);
-    if(contacts) {
-      res.status(200).json(contacts);
-    }
-    return res.status(404).json({message : "TEST dalej"})
-  } catch(error){
-    next(error)
-  }
-})
-
-router.post('/', async (req, res, next) => {
-
-  try {
-    const { error } = contactSchema.validate(req.body);
-    if(error) {
-      return res.status(400).json({message : error.details[0].message})
-    }
-    const { name, email, phone } =req.body; 
-    const newContact = await addContact({name, email, phone});
-    res.status(201).json(newContact);
-  } catch (error) {
-    next(error);
-  }
-})
-
-router.delete('/:id', async (req, res, next) => {
-  const {contactId} = req.params.id;
-  try {
-    const deleted = await removeContact(contactId);
-    if (deleted) {
-      res.status(200).json({message: "Contact deleted"})
-    } 
-    res.status(404).json({message: "TEST"});
-  } catch(error) {
-    next(error);
-  }
-})
-
-router.put('/:id', async (req, res, next) => {
-  const {contactId} = req.params.id;
-  try {
-    const { error } = contactSchema.validate(req.body);
-    if(error) {
-      return res.status(400).json({message : error.details[0].message});
-    }
-    const updatedContact = await updateContact(contactId, req.body);
-    if (updatedContact) {
-      res.status(200).json(updatedContact);
-    }
-  res.status(404).json({message : "not found"});
+    const { contactId } = req.params;
+    const contact = await getContactById(contactId);
+    contact ? res.status(200).json(contact) : res.status(404).json({message : "Not found"})
   } catch (error) {
     next(error)
   }
-})
+});
 
-module.exports = router
+router.post("/", async (req, res, next) => {
+  try {
+    const { error } = contactValidator(req.body);
+    if (error) return res.status(400).json({message : error.details[0].message});
+    res.status(201).json(await addContact(req.body));
+  } catch (error) {
+    next(error)
+  }
+});
+
+router.delete("/:contactId", async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const contact = await removeContact(contactId);
+    contact
+      ? res.status(200).json({ message: "Contact deleted" })
+      : res.status(404).json({message : "Not found"})
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/:contactId", async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { error } = contactValidator(req.body);
+    if (error) return res.status(400).json({message : error.details[0].message});
+    const savedContact = await updateContact(contactId, req.body);
+    if (savedContact) res.status(200).json({ updated: savedContact });
+    if (!savedContact) res.status(404).json({ message: "Not found" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+module.exports = router;
