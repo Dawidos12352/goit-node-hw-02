@@ -23,4 +23,7 @@ const disconnect = async () => {
   }
 };
 
-module.exports = { connect, disconnect };
+module.exports = {
+  connect,
+  disconnect,
+};
