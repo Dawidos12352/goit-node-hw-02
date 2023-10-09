@@ -1,81 +1,68 @@
-const {Contact} = require("./contacts.model")
+const { Contact } = require("./contacts.model");
 
 const listContacts = async () => {
   try {
-   return await Contact.find();
+    return await Contact.find();
   } catch (error) {
-    console.log(error.message);
+    console.error(error.message);
   }
 };
-
-const getContactById = async (id) => {
+const getContactById = async (contactId) => {
   try {
-    const contact = await Contact.findById(id);
-    return contact;
-  } catch (error) {
-    console.log(error.message);
-    return null;
-  }
-};
-
-const removeContact = async (id) => {
-  try {
-    await Contact.findByIdAndDelete(id)
-  } catch (error) {
-    console.log(error.message);
-  }
-};
-
-const addContact = async (body) => {
-  try {
-    const newContact = new Contact(body);
-    const saveContact = await newContact.save();
-    return saveContact;
+    return await Contact.findById(contactId)
   } catch (error) {
     console.error(error.message);
     return null;
   }
 };
 
-const updateContact = async (id, body) => {
-
+const removeContact = async (contactId) => {
   try {
-    const updateContact = await Contact.findByIdAndUpdate(id, body, {
-      new: true
-    });
-    return updateContact;
-  } catch(error) {
-    console.log(error.message)
+
+    return await Contact.findByIdAndRemove(contactId)
+  } catch (error) {
+    console.error(error.message);
+  }
+};
+
+const addContact = async (body) => {
+  try {
+    const newContact = new Contact(body);
+    const updatedContact = await newContact.save()
+    return updatedContact
+  } catch (error) {
+    console.error(error.message);
     return null;
   }
 };
 
-const updateContactStatus = async (id, body) => {
-  try{
-    const {favorite} = body;
-    if(!favorite) {
-      console.log("You haven`t favorite contacts")
-    }
-    const data = await Contact.findByIdAndUpdate(
-      {_id : id},
-      {favorite : favorite},
-      {new : true}
-    );
-    console.log(data);
-    if (data === null) {
-      return "Contact not found";
-    }
-    return data;
-  } catch (error){
-    console.error(error.message)
+const updateContact = async (contactId, body) => {
+  try {
+    return await Contact.findByIdAndUpdate(contactId, body, {
+      new: true,
+      });
+  } catch (error) {
+    console.error(error.message);
     return null;
   }
-}
+};
+
+
+const updateStatusContact = async (contactId, body) => {
+  try {
+    const { favorite } = body
+    return await updateContact(contactId, { favorite })
+  } catch (error) {
+    console.error(error.message);
+    return null;
+  }
+};
+
 module.exports = {
   listContacts,
   getContactById,
   removeContact,
   addContact,
   updateContact,
-  updateContactStatus,
+  updateStatusContact,
 };

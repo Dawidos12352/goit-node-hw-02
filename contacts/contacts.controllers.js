@@ -1,10 +1,10 @@
-const { listContacts, getContactById, removeContact, addContact, updateContact, updateContactStatus} = require("./contacts.service");
+const { listContacts, getContactById, removeContact, addContact, updateContact, updateStatusContact} = require("./contacts.service");
 
-const listContactsHandler = async (req, res) => {
+const listContactsHandler = async (_, res) => {
     try {
-        const list = await listContacts();
-        console.log(list);
-        return res.status(200).json(list);
+        const contacts = await listContacts();
+        console.log(contacts);
+        return res.status(200).json({ contacts });
     } catch (error) {
         console.error(error)
         return res.status(500).json({error: "Server error!"});
@@ -13,11 +13,11 @@ const listContactsHandler = async (req, res) => {
 
 const getContactByIdHandler = async (req, res) => {
     try {
-        const contact = await getContactById(req.params.id);
+        const contact = await getContactById(req.params.contactId);
         if (!contact) {
             return res.status(404).json({message : "Not found"})
         }
-        return res.status(200).json(contact);
+        return res.status(200).json({ contact });
     } catch (error) {
         console.error(error);
         return res.status(500).json({error: "Server error!"});
@@ -27,8 +27,8 @@ const getContactByIdHandler = async (req, res) => {
 
 const removeContactHandler = async (req, res) => {
     try {
-        const removedContact = await removeContact(req.params.id);
-        if (removedContact) {
+        const removedContact = await removeContact(req.params.contactId);
+        if (!removedContact) {
             return res.status(404).json({message : "Not found"})
         }
         return res.status(200).json({message : "Contact deleted"});
@@ -57,7 +57,7 @@ const addContactHandler = async (req, res) => {
 const updateContactHandler = async (req, res) => {
 
     try {
-        const updatedContact = await updateContact(req.params.id , req.body);
+        const updatedContact = await updateContact(req.params.contactId , req.body);
         if (!updatedContact) {
             return res.status(400).json({message : "Missing fields"})
         }
@@ -75,9 +75,9 @@ const updateStatusContactHandler = async (req, res) => {
         return res.status(400).json({message : "Missing field favorite"})
     }
     try {
-        const updatedStatus = await updateContactStatus(req.params.id , req.body);
+        const updatedStatus = await updateStatusContact(req.params.contactId , req.body);
         if (!updatedStatus) {
-            return res.status(404).json({message : "Not found"})
+            return res.status(404).json({message : "tutaj blad"})
         }
         return res.status(200).json(updatedStatus);
     } catch (error) {
