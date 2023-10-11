@@ -13,3 +13,9 @@ const startServer = async () => {
   }
 };
 startServer();
+
+process.on("SIGINT", async () => {
+  await db.disconnect();
+  console.log("Database connection closed");
+  process.exit();
+});
