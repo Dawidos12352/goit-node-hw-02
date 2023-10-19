@@ -13,5 +13,7 @@ res.status(200).json({message: "Hello from secret area!"}));
 usersRouter.get("/logout", authMiddleware, usersController.logoutHandler);
 usersRouter.get("/current", authMiddleware, usersController.currentHandler);
 usersRouter.patch("/avatars", authMiddleware, upload.single("avatar"), usersController.updateAvatarHandler);
+usersRouter.get("/verify/:verificationToken", usersController.verifyHandler);
+usersRouter.post('/verify', usersController.resendVerificationHandler);
 
 module.exports = usersRouter;

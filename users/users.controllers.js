@@ -1,6 +1,7 @@
 const User = require("./user.model");
 const userDao = require("./users.dao");
 const authService = require("../auth/auth.service")
+const { sendUserVerificationMail } = require('./user-mailer.service');
 
 const fs = require("fs/promises");
 const path = require("path");
@@ -20,6 +21,7 @@ const signupHandler = async (req, res, next) => {
     }
     const avatarURL = gravatar.url(email, { default: "identicon" }, true);
     const newUser = await userDao.createUser({ email, password, avatarURL });
+    await sendUserVerificationMail(newUser.email, newUser.verificationToken);
     return res.status(201).json({
       user: {
         email: newUser.email,
@@ -32,13 +34,17 @@ const signupHandler = async (req, res, next) => {
     return next(error);
   }
 };
-  const loginHandler = async (req, res, next) => {
-    try {
-      const { email, password } = req.body;
-      const userEntity = await userDao.getUser(email);
-      if (!userEntity || !(await userEntity.validatePassword(password))) {
+const loginHandler = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const userEntity = await userDao.getUser(email);
+    if (!userEntity || !(await userEntity.validatePassword(password))) {
         return res.status(401).json({ message: "Email or password is wrong" });
       }
+
+      if (!userEntity.verified) {
+        return res.status(403).send({ message: 'User is not verified.' });
+    }
   
       const userPayload = {
         id: userEntity._id,
@@ -103,6 +109,43 @@ const signupHandler = async (req, res, next) => {
       });
     }
   };
+
+  const verifyHandler = async (req, res, next) => {
+    try {
+      const { verificationToken } = req.params;
+      const user = await userDao.getUser({verificationToken});
+      if (!user) {
+        return res.status(400).send({ message: 'User not found'});
+      }
+      if (user.verified) {
+        return res.status(400).send({ message: 'User is already verified. '});
+      }
+      await userDao.updateUser(user.email, { verified: true, verificationToken: null });
+      return res.status(200).send({ message: 'Verification successful' });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  const resendVerificationHandler = async (req, res, next) => {
+    try {
+       const user = await userDao.getUser({ email: req.body.email });
+
+        if (!user) {
+            return res.status(404).send({ message: 'User does not exist.' });
+        }
+
+        if (user.verified) {
+            return res.status(400).send({ message: 'User is already verified.' });
+        }
+
+        await sendUserVerificationMail(user.email, user.verificationToken);
+
+        return res.status(204).send();
+    }catch (error) {
+      return next(error)
+    }
+  }
   
 
   module.exports = {
@@ -111,4 +154,6 @@ const signupHandler = async (req, res, next) => {
     logoutHandler,
     currentHandler,
     updateAvatarHandler,
+    verifyHandler,
+    resendVerificationHandler,
   }
